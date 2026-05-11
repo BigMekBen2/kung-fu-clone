@@ -24,6 +24,7 @@ public class GameScreen : IScreen
     private float          _floorWidth;
     private bool           _paused;
     private bool           _floorDone;
+    private float          _hitFlashTimer;
 
     private FloorDefinition  _floorDef  = null!;
     private SpawnSystem      _spawner   = new();
@@ -40,6 +41,8 @@ public class GameScreen : IScreen
 
     public void OnEnter()
     {
+        _game.Music.Init(_ctx.CurrentFloor);
+
         Player = new Player();
         Player.Position = new Vector2(Constants.PlayerStartX, Constants.PlayerStartY);
         Player.Lives    = _ctx.Lives;
@@ -73,7 +76,10 @@ public class GameScreen : IScreen
         foreach (var e in Enemies) e.Update(dt, this);
         foreach (var p in Projectiles) p.Update(dt);
 
+        int healthBefore = Player.Health;
         _collision.Resolve(Player, Enemies, Projectiles, _score);
+        if (Player.Health < healthBefore) _hitFlashTimer = 0.1f;
+        _hitFlashTimer -= dt;
 
         // Scroll camera
         _cameraX += Constants.ScrollSpeed * dt;
@@ -99,7 +105,10 @@ public class GameScreen : IScreen
         {
             _ctx.Lives--;
             if (_ctx.Lives <= 0)
+            {
+                Audio.AudioEngine.GameOverSfx.Play();
                 _game.TransitionTo(GameStateId.GameOver);
+            }
             else
                 OnEnter();
             return;
@@ -136,6 +145,10 @@ public class GameScreen : IScreen
         foreach (var e in Enemies)     DrawEnemy(e);
         PlayerRenderer.Draw(Player, _cameraX);
         HudRenderer.Draw(_ctx, Player);
+
+        if (_hitFlashTimer > 0f)
+            Raylib.DrawRectangle(0, 0, Constants.InternalWidth, Constants.InternalHeight,
+                new Color(255, 255, 255, 80));
 
         if (_paused)
         {

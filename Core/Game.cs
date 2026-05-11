@@ -11,6 +11,7 @@ public class Game
     private readonly InputManager _input    = new();
     private readonly GameContext  _ctx      = new();
     private readonly AudioEngine  _audio    = new();
+    public  readonly MusicTrack   Music     = new();
 
     private IScreen _current = null!;
 
@@ -28,6 +29,7 @@ public class Game
 
         _renderer.Init();
         _audio.BakeAll();
+        _ctx.LoadHiScore();
 
         _titleScreen    = new TitleScreen(this, _renderer, _input);
         _gameScreen     = new GameScreen(this, _renderer, _input, _ctx);
@@ -39,6 +41,7 @@ public class Game
         while (!Raylib.WindowShouldClose())
         {
             float dt = Raylib.GetFrameTime();
+            Music.Update();
             _current.Update(dt);
 
             Raylib.BeginDrawing();
@@ -47,6 +50,8 @@ public class Game
             Raylib.EndDrawing();
         }
 
+        _ctx.SaveHiScore();
+        Music.Unload();
         _renderer.Unload();
         _audio.UnloadAll();
         Raylib.CloseAudioDevice();
