@@ -12,8 +12,9 @@ public class Game
 
     private IScreen _current = null!;
 
-    private TitleScreen   _titleScreen   = null!;
-    private GameScreen    _gameScreen    = null!;
+    private TitleScreen    _titleScreen    = null!;
+    private GameScreen     _gameScreen     = null!;
+    private BonusScreen    _bonusScreen    = null!;
     private GameOverScreen _gameOverScreen = null!;
 
     public void Run()
@@ -27,6 +28,7 @@ public class Game
 
         _titleScreen    = new TitleScreen(this, _renderer, _input);
         _gameScreen     = new GameScreen(this, _renderer, _input, _ctx);
+        _bonusScreen    = new BonusScreen(this, _renderer, _input, _ctx);
         _gameOverScreen = new GameOverScreen(this, _renderer, _input, _ctx);
 
         TransitionTo(GameStateId.Title);
@@ -52,10 +54,11 @@ public class Game
         _current?.OnExit();
         _current = next switch
         {
-            GameStateId.Title    => _titleScreen,
-            GameStateId.Playing  => _gameScreen,
-            GameStateId.GameOver => _gameOverScreen,
-            _                    => _titleScreen
+            GameStateId.Title      => _titleScreen,
+            GameStateId.Playing    => _gameScreen,
+            GameStateId.BonusStage => _bonusScreen,
+            GameStateId.GameOver   => _gameOverScreen,
+            _                      => _titleScreen
         };
         _current.OnEnter();
     }
