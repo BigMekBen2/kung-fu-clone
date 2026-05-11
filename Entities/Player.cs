@@ -1,5 +1,6 @@
 using System.Numerics;
 using Raylib_cs;
+using KungFuClone.Audio;
 using KungFuClone.Core;
 
 namespace KungFuClone.Entities;
@@ -122,6 +123,7 @@ public class Player : Entity
             Velocity.Y = JumpSpeed;
             IsOnGround = false;
             State = PlayerState.Jumping;
+            AudioEngine.Jump.Play();
             return;
         }
 
@@ -137,6 +139,7 @@ public class Player : Entity
         {
             State      = crouching ? PlayerState.CrouchPunch : PlayerState.Punching;
             StateTimer = AttackDuration;
+            AudioEngine.Punch.Play();
         }
         else if (input.KickPress)
         {
@@ -150,6 +153,7 @@ public class Player : Entity
                 State      = crouching ? PlayerState.CrouchKick : PlayerState.Kicking;
                 StateTimer = AttackDuration;
             }
+            AudioEngine.Kick.Play();
         }
     }
 
@@ -184,6 +188,7 @@ public class Player : Entity
     public void TakeDamage(int amount)
     {
         if (IsInvincible) return;
+        AudioEngine.Hurt.Play();
         Health -= amount;
         InvincibleTimer = InvincibleTime;
         if (Health <= 0)

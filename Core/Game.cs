@@ -1,4 +1,5 @@
 using Raylib_cs;
+using KungFuClone.Audio;
 using KungFuClone.Rendering;
 using KungFuClone.Screens;
 
@@ -9,6 +10,7 @@ public class Game
     private readonly Renderer     _renderer = new();
     private readonly InputManager _input    = new();
     private readonly GameContext  _ctx      = new();
+    private readonly AudioEngine  _audio    = new();
 
     private IScreen _current = null!;
 
@@ -25,6 +27,7 @@ public class Game
         Raylib.SetTargetFPS(60);
 
         _renderer.Init();
+        _audio.BakeAll();
 
         _titleScreen    = new TitleScreen(this, _renderer, _input);
         _gameScreen     = new GameScreen(this, _renderer, _input, _ctx);
@@ -45,6 +48,7 @@ public class Game
         }
 
         _renderer.Unload();
+        _audio.UnloadAll();
         Raylib.CloseAudioDevice();
         Raylib.CloseWindow();
     }
