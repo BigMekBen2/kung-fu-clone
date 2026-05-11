@@ -55,6 +55,7 @@ public class MusicTrack
         _bpm        = 140f + floor * 8f;
         StartNote();
 
+        Raylib.SetAudioStreamBufferSizeDefault(BufferFrames);
         _stream = Raylib.LoadAudioStream((uint)SampleRate, 16, 1);
         Raylib.PlayAudioStream(_stream);
         _initialized = true;
