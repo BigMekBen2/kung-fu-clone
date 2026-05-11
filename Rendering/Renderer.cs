@@ -7,7 +7,14 @@ namespace KungFuClone.Rendering;
 public class Renderer
 {
     private RenderTexture2D _canvas;
-    public  float CameraX;
+
+    private float _cameraX;
+    public float CameraX
+    {
+        get => _cameraX;
+        set { _cameraX = value; CurrentCameraX = value; }
+    }
+    public static float CurrentCameraX { get; private set; }
 
     public void Init()
     {

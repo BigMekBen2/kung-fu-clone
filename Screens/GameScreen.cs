@@ -2,7 +2,10 @@ using System.Numerics;
 using Raylib_cs;
 using KungFuClone.Core;
 using KungFuClone.Entities;
+using KungFuClone.Entities.Enemies;
+using KungFuClone.Level;
 using KungFuClone.Rendering;
+using KungFuClone.Systems;
 
 namespace KungFuClone.Screens;
 
@@ -13,9 +16,19 @@ public class GameScreen : IScreen
     private readonly InputManager _input;
     private readonly GameContext  _ctx;
 
-    public  Player   Player { get; private set; } = null!;
-    private float    _cameraX;
-    private float    _floorWidth = 3200f;
+    public  Player          Player      { get; private set; } = null!;
+    public  List<Enemy>     Enemies     { get; } = new();
+    public  List<Projectile> Projectiles { get; } = new();
+
+    private float          _cameraX;
+    private float          _floorWidth;
+    private bool           _paused;
+    private bool           _floorDone;
+
+    private FloorDefinition  _floorDef  = null!;
+    private SpawnSystem      _spawner   = new();
+    private CollisionSystem  _collision = new();
+    private ScoreSystem      _score     = null!;
 
     public GameScreen(Game game, Renderer r, InputManager input, GameContext ctx)
     {
@@ -27,62 +40,82 @@ public class GameScreen : IScreen
 
     public void OnEnter()
     {
-        Player   = new Player();
+        Player = new Player();
         Player.Position = new Vector2(Constants.PlayerStartX, Constants.PlayerStartY);
         Player.Lives    = _ctx.Lives;
         Player.Health   = 3;
-        _cameraX        = 0f;
-        _ctx.FloorTimeRemaining = 120f;
+
+        Enemies.Clear();
+        Projectiles.Clear();
+
+        _floorDef  = LevelLoader.Build(_ctx.CurrentFloor);
+        _floorWidth = _floorDef.TotalWidth;
+        _cameraX   = 0f;
+        _paused    = false;
+        _floorDone = false;
+
+        _spawner.LoadFloor(_floorDef);
+        _score = new ScoreSystem(_ctx);
+        _ctx.FloorTimeRemaining = _floorDef.TimeLimit;
     }
 
     public void OnExit() { }
 
     public void Update(float dt)
     {
-        if (_input.Start) _paused = !_paused;
+        if (_input.Start) { _paused = !_paused; return; }
         if (_paused) return;
 
         _ctx.FloorTimeRemaining -= dt;
 
         Player.Update(dt, _input);
 
+        foreach (var e in Enemies) e.Update(dt, this);
+        foreach (var p in Projectiles) p.Update(dt);
+
+        _collision.Resolve(Player, Enemies, Projectiles, _score);
+
         // Scroll camera
         _cameraX += Constants.ScrollSpeed * dt;
         _cameraX  = Math.Min(_cameraX, _floorWidth - Constants.InternalWidth);
 
-        // Player can't fall behind left edge
+        // Player left boundary
         float leftBound = _cameraX + 4f;
-        if (Player.Position.X < leftBound)
-        {
-            Player.Position.X = leftBound;
-            if (Player.Velocity.X < 0) Player.Velocity.X = 0;
-        }
+        if (Player.Position.X < leftBound) { Player.Position.X = leftBound; if (Player.Velocity.X < 0) Player.Velocity.X = 0; }
 
-        // Player can't go past right edge
+        // Player right boundary
         float rightBound = _cameraX + Constants.InternalWidth - 20f;
-        if (Player.Position.X > rightBound)
-            Player.Position.X = rightBound;
+        if (Player.Position.X > rightBound) Player.Position.X = rightBound;
 
         _r.CameraX = _cameraX;
 
-        // Player died — lose life
+        _spawner.Update(_cameraX, Enemies, Enemies);
+
+        // Sync lives/score to context
+        _ctx.Lives = Player.Lives;
+
+        // Player dead
         if (Player.State == PlayerState.Dead && Player.StateTimer <= 0f)
         {
             _ctx.Lives--;
-            _ctx.Score = Player.Health; // preserve score etc.
             if (_ctx.Lives <= 0)
                 _game.TransitionTo(GameStateId.GameOver);
             else
-                OnEnter(); // restart floor
+                OnEnter();
+            return;
         }
 
-        // Floor complete when camera reaches end
-        if (_cameraX >= _floorWidth - Constants.InternalWidth - 1f)
+        // Floor complete: camera at far right AND all enemies gone
+        if (!_floorDone &&
+            _cameraX >= _floorWidth - Constants.InternalWidth - 1f &&
+            Enemies.Count == 0)
         {
+            _floorDone = true;
+            // Time bonus
+            _score.Add((int)(_ctx.FloorTimeRemaining * 10));
             _ctx.CurrentFloor++;
             if (_ctx.CurrentFloor > 5)
             {
-                // Won — loop back
                 _ctx.CurrentFloor = 1;
                 _game.TransitionTo(GameStateId.Title);
             }
@@ -91,25 +124,30 @@ public class GameScreen : IScreen
                 _game.TransitionTo(GameStateId.BonusStage);
             }
         }
-
     }
-
-    private bool _paused;
 
     public void Draw()
     {
         _r.BeginFrame();
 
         BackgroundRenderer.Draw(_ctx.CurrentFloor, _cameraX);
+
+        foreach (var p in Projectiles) p.Draw(_cameraX);
+        foreach (var e in Enemies)     DrawEnemy(e);
         PlayerRenderer.Draw(Player, _cameraX);
         HudRenderer.Draw(_ctx, Player);
 
         if (_paused)
         {
-            Raylib.DrawRectangle(88, 108, 80, 14, new Color(0,0,0,180));
+            Raylib.DrawRectangle(88, 108, 80, 14, new Color(0, 0, 0, 180));
             Raylib.DrawText("PAUSED", 100, 110, 10, Color.White);
         }
 
         _r.EndFrame();
+    }
+
+    private static void DrawEnemy(Enemy e)
+    {
+        EnemyRenderer.Draw(e, 0); // cameraX handled via Renderer.CameraX — pass 0 since we draw via world coords
     }
 }
