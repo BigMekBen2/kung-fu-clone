@@ -43,19 +43,27 @@ public class GameScreen : IScreen
     {
         _game.Music.Init(_ctx.CurrentFloor);
 
+        _floorDef   = LevelLoader.Build(_ctx.CurrentFloor);
+        _floorWidth = _floorDef.TotalWidth;
+        _paused     = false;
+        _floorDone  = false;
+
         Player = new Player();
-        Player.Position = new Vector2(Constants.PlayerStartX, Constants.PlayerStartY);
-        Player.Lives    = _ctx.Lives;
-        Player.Health   = 3;
+        // Floor 1 scrolls left: start at right end; others start at left
+        float startX = _floorDef.Direction < 0
+            ? _floorWidth - Constants.PlayerStartX - Constants.InternalWidth / 2f
+            : Constants.PlayerStartX;
+        Player.Position  = new Vector2(startX, Constants.PlayerStartY);
+        Player.Lives     = _ctx.Lives;
+        Player.Health    = 3;
+        Player.FacingRight = _floorDef.Direction >= 0;
 
         Enemies.Clear();
         Projectiles.Clear();
 
-        _floorDef  = LevelLoader.Build(_ctx.CurrentFloor);
-        _floorWidth = _floorDef.TotalWidth;
-        _cameraX   = 0f;
-        _paused    = false;
-        _floorDone = false;
+        // Camera centered on player, clamped to floor
+        _cameraX = Math.Clamp(Player.Position.X - Constants.InternalWidth / 2f,
+                              0, _floorWidth - Constants.InternalWidth);
 
         _spawner.LoadFloor(_floorDef);
         _score = new ScoreSystem(_ctx);
@@ -73,31 +81,27 @@ public class GameScreen : IScreen
 
         Player.Update(dt, _input);
 
-        foreach (var e in Enemies) e.Update(dt, this);
-        foreach (var p in Projectiles) p.Update(dt);
+        foreach (var e in Enemies.ToList()) e.Update(dt, this);
+        foreach (var p in Projectiles.ToList()) p.Update(dt);
 
         int healthBefore = Player.Health;
         _collision.Resolve(Player, Enemies, Projectiles, _score);
         if (Player.Health < healthBefore) _hitFlashTimer = 0.1f;
         _hitFlashTimer -= dt;
 
-        // Scroll camera
-        _cameraX += Constants.ScrollSpeed * dt;
-        _cameraX  = Math.Min(_cameraX, _floorWidth - Constants.InternalWidth);
-
-        // Player left boundary
-        float leftBound = _cameraX + 4f;
-        if (Player.Position.X < leftBound) { Player.Position.X = leftBound; if (Player.Velocity.X < 0) Player.Velocity.X = 0; }
-
-        // Player right boundary
-        float rightBound = _cameraX + Constants.InternalWidth - 20f;
-        if (Player.Position.X > rightBound) Player.Position.X = rightBound;
-
+        // Camera follows player, centered on X
+        _cameraX = Math.Clamp(
+            Player.Position.X - Constants.InternalWidth / 2f,
+            0, _floorWidth - Constants.InternalWidth);
         _r.CameraX = _cameraX;
 
-        _spawner.Update(_cameraX, Enemies, Enemies);
+        // Hard world boundaries — player can't leave the floor
+        if (Player.Position.X < 8f) { Player.Position.X = 8f; Player.Velocity.X = 0; }
+        if (Player.Position.X > _floorWidth - 8f) { Player.Position.X = _floorWidth - 8f; Player.Velocity.X = 0; }
 
-        // Sync lives/score to context
+        _spawner.Update(_cameraX, Enemies);
+
+        // Sync lives to context
         _ctx.Lives = Player.Lives;
 
         // Player dead
@@ -114,13 +118,14 @@ public class GameScreen : IScreen
             return;
         }
 
-        // Floor complete: camera at far right AND all enemies gone
-        if (!_floorDone &&
-            _cameraX >= _floorWidth - Constants.InternalWidth - 1f &&
-            Enemies.Count == 0)
+        // Floor complete: player reaches the far end (direction-aware) with no enemies
+        bool atEnd = _floorDef.Direction >= 0
+            ? Player.Position.X >= _floorWidth - 40f
+            : Player.Position.X <= 40f;
+
+        if (!_floorDone && atEnd && Enemies.Count == 0)
         {
             _floorDone = true;
-            // Time bonus
             _score.Add((int)(_ctx.FloorTimeRemaining * 10));
             _ctx.CurrentFloor++;
             if (_ctx.CurrentFloor > 5)

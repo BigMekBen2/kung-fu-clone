@@ -13,9 +13,12 @@ public class CollisionSystem
             var hitbox = player.AttackHitbox;
             foreach (var e in enemies)
             {
-                if (!e.Active) continue;
+                if (!e.Active || !e.CanBeHit) continue;
                 if (CheckOverlap(hitbox, e.WorldBounds))
+                {
+                    e.HitCooldown = 0.3f;   // one hit per swing
                     e.OnHit((int)Player.AttackDamage, player.CurrentHitType);
+                }
             }
         }
 

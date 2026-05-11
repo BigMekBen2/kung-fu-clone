@@ -21,6 +21,7 @@ public class FloorDefinition
     public float        TotalWidth;
     public int          BackgroundTheme;
     public float        TimeLimit;
+    public int          Direction = 1;   // +1 = scroll right, -1 = scroll left
     public SpawnEntry[] Spawns  = Array.Empty<SpawnEntry>();
     public BossSpawn?   Boss;
 }

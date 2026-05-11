@@ -200,7 +200,8 @@ public class Player : Entity
         {
             State      = PlayerState.Hurt;
             StateTimer = HurtDuration;
-            Velocity.Y = -80f;
+            Velocity.Y = -60f;
+            IsOnGround = false;
         }
     }
 
@@ -218,8 +219,10 @@ public class Player : Entity
         {
             Position.Y = groundTop;
             Velocity.Y = 0f;
+            bool wasAirborne = !IsOnGround;
             IsOnGround = true;
-            if (State == PlayerState.Jumping || State == PlayerState.JumpKick)
+            if (wasAirborne && State is PlayerState.Jumping or PlayerState.JumpKick
+                            or PlayerState.Hurt)
                 State = PlayerState.Idle;
         }
     }

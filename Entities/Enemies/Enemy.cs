@@ -15,6 +15,8 @@ public abstract class Enemy : Entity
     public float       StateTimer       = 0f;
     public int         AttackDamage     = 1;
     public bool        ScoreAwarded     = false;
+    public float       HitCooldown      = 0f;   // invincibility after a hit
+    public bool        CanBeHit         => HitCooldown <= 0f;
 
     public abstract bool      IsAttacking  { get; }
     public abstract Rectangle AttackHitbox { get; }
@@ -28,7 +30,8 @@ public abstract class Enemy : Entity
     {
         if (!Active) return;
         Target = ctx.Player;
-        StateTimer -= dt;
+        StateTimer  -= dt;
+        HitCooldown -= dt;
         UpdateAI(dt, ctx);
         Position.X += Velocity.X * dt;
         Position.Y += Velocity.Y * dt;

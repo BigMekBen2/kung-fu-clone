@@ -14,28 +14,29 @@ public static class LevelLoader
 
     public static FloorDefinition BuildFloor1() => new()
     {
-        FloorNumber = 1, TotalWidth = 3200, TimeLimit = 120f,
+        // Player starts at right end and walks LEFT (west)
+        FloorNumber = 1, TotalWidth = 3200, TimeLimit = 120f, Direction = -1,
         Spawns = new SpawnEntry[]
         {
-            new() { Type = EnemyType.Gripper,      WorldX = 380  },
-            new() { Type = EnemyType.Gripper,      WorldX = 560  },
-            new() { Type = EnemyType.Gripper,      WorldX = 720  },
-            new() { Type = EnemyType.KnifeThrower, WorldX = 900  },
-            new() { Type = EnemyType.Gripper,      WorldX = 1050 },
-            new() { Type = EnemyType.Gripper,      WorldX = 1200 },
-            new() { Type = EnemyType.KnifeThrower, WorldX = 1380 },
-            new() { Type = EnemyType.Gripper,      WorldX = 1500 },
-            new() { Type = EnemyType.Gripper,      WorldX = 1650, Side = -1 },
-            new() { Type = EnemyType.KnifeThrower, WorldX = 1800 },
-            new() { Type = EnemyType.Gripper,      WorldX = 1950 },
-            new() { Type = EnemyType.Gripper,      WorldX = 2100 },
-            new() { Type = EnemyType.KnifeThrower, WorldX = 2280 },
-            new() { Type = EnemyType.Gripper,      WorldX = 2420 },
-            new() { Type = EnemyType.Gripper,      WorldX = 2580 },
-            new() { Type = EnemyType.KnifeThrower, WorldX = 2760 },
-            new() { Type = EnemyType.Gripper,      WorldX = 2900, Side = -1 },
+            new() { Type = EnemyType.Gripper,      WorldX = 2820 },
+            new() { Type = EnemyType.Gripper,      WorldX = 2640 },
+            new() { Type = EnemyType.Gripper,      WorldX = 2480 },
+            new() { Type = EnemyType.KnifeThrower, WorldX = 2300 },
+            new() { Type = EnemyType.Gripper,      WorldX = 2150 },
+            new() { Type = EnemyType.Gripper,      WorldX = 2000 },
+            new() { Type = EnemyType.KnifeThrower, WorldX = 1820 },
+            new() { Type = EnemyType.Gripper,      WorldX = 1700 },
+            new() { Type = EnemyType.Gripper,      WorldX = 1550 },
+            new() { Type = EnemyType.KnifeThrower, WorldX = 1400 },
+            new() { Type = EnemyType.Gripper,      WorldX = 1250 },
+            new() { Type = EnemyType.Gripper,      WorldX = 1100 },
+            new() { Type = EnemyType.KnifeThrower, WorldX = 920  },
+            new() { Type = EnemyType.Gripper,      WorldX = 780  },
+            new() { Type = EnemyType.Gripper,      WorldX = 620  },
+            new() { Type = EnemyType.KnifeThrower, WorldX = 440  },
+            new() { Type = EnemyType.Gripper,      WorldX = 300  },
         },
-        Boss = new BossSpawn { WorldX = 3050, AttackPattern = 1 }
+        Boss = new BossSpawn { WorldX = 150, AttackPattern = 1 }
     };
 
     public static FloorDefinition BuildFloor2() => new()

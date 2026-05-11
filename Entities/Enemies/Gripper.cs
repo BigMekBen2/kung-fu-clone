@@ -68,7 +68,7 @@ public class Gripper : Enemy
         float dx = Target.Position.X - Position.X;
         FacingRight = dx > 0;
 
-        if (MathF.Abs(dx) <= GrabRange && !Target.IsGrabbed && !Target.IsInvincible)
+        if (MathF.Abs(dx) <= GrabRange && !Target.IsGrabbed && !Target.IsInvincible && Target.IsOnGround)
         {
             // Grab!
             _grabbing = true;
